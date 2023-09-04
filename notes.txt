@@ -1,2 +1,0 @@
-FIS demo to follow 
-https://catalog.us-east-1.prod.workshops.aws/workshops/5fc0039f-9f15-47f8-aff0-09dc7b1779ee/en-US/030-basic-content/070-containers/010-ecs
