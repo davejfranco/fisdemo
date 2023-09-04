@@ -51,9 +51,9 @@ export class FisDemo extends cdk.Stack {
     //ECS Cluster Capacity 
     cluster.addCapacity(`${prefix}-asg`, {
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO), //new ec2.InstanceType('t3.micro'),
-      desiredCapacity: 1,
+      desiredCapacity: 2,
       minCapacity: 1,
-      maxCapacity: 1,
+      maxCapacity: 2,
     });
 
     // Create Task Definition
@@ -73,6 +73,11 @@ export class FisDemo extends cdk.Stack {
     const service = new ecs.Ec2Service(this, 'Service', {
       cluster,
       taskDefinition,
+      desiredCount: 2,
+      placementStrategies: [
+        ecs.PlacementStrategy.spreadAcrossInstances(),
+        //ecs.PlacementStrategy.randomly(),
+      ],
     });
 
     // Create ALB
@@ -95,5 +100,8 @@ export class FisDemo extends cdk.Stack {
         timeout: cdk.Duration.seconds(5),
       }
     });
+
+    // Output
+    new cdk.CfnOutput(this, 'LoadBalancerDNS', { value: 'http://' + lb.loadBalancerDnsName });
   }
 }
