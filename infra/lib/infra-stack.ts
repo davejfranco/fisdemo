@@ -59,7 +59,7 @@ export class FisDemo extends cdk.Stack {
     // Create Task Definition
     const taskDefinition = new ecs.Ec2TaskDefinition(this, 'TaskDef');
     const container = taskDefinition.addContainer('web', {
-      image: ecs.ContainerImage.fromRegistry("amazon/amazon-ecs-sample"),
+      image: ecs.ContainerImage.fromRegistry("nginx:1.24-alpine"),
       memoryLimitMiB: 256,
     });
 
@@ -91,7 +91,7 @@ export class FisDemo extends cdk.Stack {
       })],
       healthCheck: {
         interval: cdk.Duration.seconds(60),
-        path: "/health",
+        path: "/",
         timeout: cdk.Duration.seconds(5),
       }
     });
