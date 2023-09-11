@@ -6,10 +6,20 @@ import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 //import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+//IAM
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 
 
 const prefix = 'FISDemo';
+const capacity = {
+  nodeCount : 1,
+  task: {
+    count: 1,
+    memoryLimitMiB: 256,
+  },
+  instanceType: new ec2.InstanceType('t3.micro'),
+}
 
 export class FisDemo extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -39,7 +49,6 @@ export class FisDemo extends cdk.Stack {
     });
   
     //ECS Cluster
-    //const cluster = new ecs.Cluster(this, `${prefix}-Cluster`, { vpc });
     const cluster = new ecs.Cluster(this, `${prefix}-Cluster`, {
       vpc: vpc,
       clusterName: `${prefix}-Cluster`,
@@ -50,17 +59,18 @@ export class FisDemo extends cdk.Stack {
 
     //ECS Cluster Capacity 
     cluster.addCapacity(`${prefix}-asg`, {
-      instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO), //new ec2.InstanceType('t3.micro'),
-      desiredCapacity: 2,
-      minCapacity: 1,
-      maxCapacity: 2,
+      instanceType: capacity.instanceType, //ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
+      //desiredCapacity: 2,
+      minCapacity: capacity.nodeCount,
+      maxCapacity: capacity.nodeCount,
+      //healthCheck: autoscaling.HealthCheck.ec2({grace: cdk.Duration.seconds(60)}),
     });
 
     // Create Task Definition
     const taskDefinition = new ecs.Ec2TaskDefinition(this, 'TaskDef');
     const container = taskDefinition.addContainer('web', {
       image: ecs.ContainerImage.fromRegistry("nginx:1.24-alpine"),
-      memoryLimitMiB: 256,
+      memoryLimitMiB: capacity.task.memoryLimitMiB,
     });
 
     container.addPortMappings({
@@ -73,17 +83,17 @@ export class FisDemo extends cdk.Stack {
     const service = new ecs.Ec2Service(this, 'Service', {
       cluster,
       taskDefinition,
-      desiredCount: 2,
+      desiredCount: capacity.task.count,
       placementStrategies: [
         ecs.PlacementStrategy.spreadAcrossInstances(),
-        //ecs.PlacementStrategy.randomly(),
+        //ecs.PlacementStrategy.packedByCpu(),
       ],
     });
 
     // Create ALB
     const lb = new elbv2.ApplicationLoadBalancer(this, 'LB', {
       vpc,
-      internetFacing: true
+      internetFacing: true   
     });
     const listener = lb.addListener('PublicListener', { port: 80, open: true });
 
@@ -95,13 +105,33 @@ export class FisDemo extends cdk.Stack {
         containerPort: 80
       })],
       healthCheck: {
-        interval: cdk.Duration.seconds(60),
-        path: "/",
+        path: "/", // Health Check Path
         timeout: cdk.Duration.seconds(5),
-      }
+        interval: cdk.Duration.seconds(15),    
+      },
+      //loadBalancingAlgorithmType: elbv2.LoadBalancingAlgorithmType.LEAST_OUTSTANDING_REQUESTS,
     });
 
     // Output
     new cdk.CfnOutput(this, 'LoadBalancerDNS', { value: 'http://' + lb.loadBalancerDnsName });
+
+    // Fault Injection Simulation
+    // IAM Role
+    const fisRole = new iam.Role(this, `${prefix}-role`, {
+      roleName: `${prefix}-role`,
+      assumedBy: new iam.ServicePrincipal('fis.amazonaws.com'),//Fault Injection Simulator Service Principal
+      description: 'The role for FIS Demo',
+    });
+    
+    // Attach Managed Policies
+    const policyNames = [
+    'service-role/AWSFaultInjectionSimulatorEC2Access',
+    'service-role/AWSFaultInjectionSimulatorECSAccess'
+    ]
+    policyNames.forEach((policyName) => {
+      fisRole.addManagedPolicy(
+        iam.ManagedPolicy.fromAwsManagedPolicyName(policyName) // Access to perform fault injection on EC2 instances
+      );
+    });
   }
 }
