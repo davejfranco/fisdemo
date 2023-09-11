@@ -8,8 +8,10 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+ENDPOINT=$1
 success=0
 fail=0
+total_requests=30
 echo "Testing endpoint: $ENDPOINT"
 
 print_counts() {
@@ -22,7 +24,7 @@ print_counts() {
 
 trap print_counts INT
 
-while true; do
+for i in $(seq 1 $total_requests); do
   request=$(curl -s -o /dev/null -w "%{http_code}\n" $ENDPOINT)
   if [ $request -eq "200" ]; then
     echo "Success - $request"
@@ -34,4 +36,5 @@ while true; do
   sleep 1
 done
 
+print_counts
 
