@@ -4,7 +4,7 @@
       "Instances-Target-1": {
           "resourceType": "aws:ec2:instance",
           "resourceArns": [
-              "arn:aws:ec2:us-east-1:444106639146:instance/i-0c674c6bce2276f8a"
+              "arn:aws:ec2:us-east-1::instance/i-0c674c6bce2276f8a"
           ],
           "selectionMode": "ALL"
       }
@@ -23,7 +23,7 @@
           "source": "none"
       }
   ],
-  "roleArn": "arn:aws:iam::444106639146:role/Demo-FIS-role",
+  "roleArn": "arn:aws:iam:::role/Demo-FIS-role",
   "tags": {
       "Name": "Demo"
   }

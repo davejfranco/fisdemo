@@ -13,9 +13,9 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 
 const prefix = 'FISDemo';
 const capacity = {
-  nodeCount : 1,
+  nodeCount : 2,
   task: {
-    count: 1,
+    count: 2,
     memoryLimitMiB: 256,
   },
   instanceType: new ec2.InstanceType('t3.micro'),
@@ -28,7 +28,7 @@ export class FisDemo extends cdk.Stack {
     //Infrastructure Network
     const vpcName = `${prefix}-VPC`;
     const vpcCidr = '10.0.0.0/16';
-    const maxAzs = 3;
+    //const maxAzs = 3;
     
     const vpc = new ec2.Vpc(this, vpcName, {
       vpcName: vpcName,
@@ -106,8 +106,8 @@ export class FisDemo extends cdk.Stack {
       })],
       healthCheck: {
         path: "/", // Health Check Path
-        timeout: cdk.Duration.seconds(5),
-        interval: cdk.Duration.seconds(15),    
+        timeout: cdk.Duration.seconds(30),
+        interval: cdk.Duration.seconds(60),    
       },
       //loadBalancingAlgorithmType: elbv2.LoadBalancingAlgorithmType.LEAST_OUTSTANDING_REQUESTS,
     });
