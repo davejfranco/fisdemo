@@ -20,6 +20,11 @@ const capacity = {
   },
   instanceType: new ec2.InstanceType('t3.micro'),
 }
+const healtcheck = {
+    timeout: cdk.Duration.seconds(2),
+    interval: cdk.Duration.seconds(5),
+    path: '/',
+}  
 
 export class FisDemo extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -56,16 +61,14 @@ export class FisDemo extends cdk.Stack {
       //optional
       containerInsights: false,
     });
-
     //ECS Cluster Capacity 
-    cluster.addCapacity(`${prefix}-asg`, {
-      instanceType: capacity.instanceType, //ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
-      //desiredCapacity: 2,
-      minCapacity: capacity.nodeCount,
-      maxCapacity: capacity.nodeCount,
-      //healthCheck: autoscaling.HealthCheck.ec2({grace: cdk.Duration.seconds(60)}),
-    });
-
+     cluster.addCapacity(`${prefix}-asg`, {
+       instanceType: capacity.instanceType, //ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
+       //desiredCapacity: 2,
+       minCapacity: capacity.nodeCount,
+       maxCapacity: capacity.nodeCount,
+       //healthCheck: autoscaling.HealthCheck.ec2({grace: cdk.Duration.seconds(60)}),
+     });
     // Create Task Definition
     const taskDefinition = new ecs.Ec2TaskDefinition(this, 'TaskDef');
     const container = taskDefinition.addContainer('web', {
@@ -105,9 +108,9 @@ export class FisDemo extends cdk.Stack {
         containerPort: 80
       })],
       healthCheck: {
-        path: "/", // Health Check Path
-        timeout: cdk.Duration.seconds(30),
-        interval: cdk.Duration.seconds(60),    
+        path: healtcheck.path, // Health Check Path
+        timeout: healtcheck.timeout,//cdk.Duration.seconds(30),
+        interval: healtcheck.interval //cdk.Duration.seconds(60),    
       },
       //loadBalancingAlgorithmType: elbv2.LoadBalancingAlgorithmType.LEAST_OUTSTANDING_REQUESTS,
     });
