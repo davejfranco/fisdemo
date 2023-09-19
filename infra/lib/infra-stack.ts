@@ -10,19 +10,22 @@ import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
 
+// ECS Best Practices
+// https://docs.aws.amazon.com/AmazonECS/latest/bestpracticesguide/deployment.html
 
 const prefix = 'FISDemo';
 const capacity = {
   nodeCount : 2,
   task: {
-    count: 2,
+    minCapacity: 2,
+    maxCapacity: 4,
     memoryLimitMiB: 256,
   },
   instanceType: new ec2.InstanceType('t3.micro'),
 }
 const healtcheck = {
-    timeout: cdk.Duration.seconds(2),
-    interval: cdk.Duration.seconds(5),
+    timeout: cdk.Duration.seconds(30),
+    interval: cdk.Duration.seconds(60),
     path: '/',
 }  
 
@@ -86,11 +89,21 @@ export class FisDemo extends cdk.Stack {
     const service = new ecs.Ec2Service(this, 'Service', {
       cluster,
       taskDefinition,
-      desiredCount: capacity.task.count,
+      desiredCount: capacity.task.minCapacity,
       placementStrategies: [
         ecs.PlacementStrategy.spreadAcrossInstances(),
         //ecs.PlacementStrategy.packedByCpu(),
       ],
+    });
+
+    // Service Auto Scaling
+    const scaling = service.autoScaleTaskCount({ 
+      maxCapacity: capacity.task.maxCapacity, 
+      });
+    scaling.scaleOnCpuUtilization('CpuScaling', {
+      targetUtilizationPercent: 50,
+      scaleInCooldown: cdk.Duration.seconds(60),
+      scaleOutCooldown: cdk.Duration.seconds(60),
     });
 
     // Create ALB

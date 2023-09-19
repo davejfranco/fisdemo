@@ -11,7 +11,7 @@ fi
 ENDPOINT=$1
 success=0
 fail=0
-total_requests=30
+total_requests=50
 echo "Testing endpoint: $ENDPOINT"
 
 print_counts() {
@@ -25,7 +25,7 @@ print_counts() {
 trap print_counts INT
 
 for i in $(seq 1 $total_requests); do
-  request=$(curl --connect-timeout 2 -s -o /dev/null -w "%{http_code}\n" $ENDPOINT)
+  request=$(curl --connect-timeout 5 -s -o /dev/null -w "%{http_code}\n" $ENDPOINT)
   if [ $request -eq "200" ]; then
     echo "Success - $request"
     success=$((success+1))
