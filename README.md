@@ -1,4 +1,4 @@
-# AWS Fault Injectio Demo
+# AWS Fault Injection Demo
 
 This repo contains a demo of how to use AWS Fault Injection Simulator to test your application's resilience to failure.
 
